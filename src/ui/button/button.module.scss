@@ -1,0 +1,115 @@
+// $disabled-text: #9CA197 отсутствует в глобальных стилях
+$disabled-text: #9ca197;
+
+/* Общие стили для всех кнопок */
+.primary,
+.secondary,
+.tertiary {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  color: $font-color-primary;
+  font: $font-body;
+  letter-spacing: $font-letter-spacing-secondary;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:disabled {
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  //фокуса в фигме нет, сделал на свой вкус на всякий случай
+  &:focus-visible {
+    outline: 2px solid $button-color-pressed;
+    outline-offset: 2px;
+  }
+
+  .buttonIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Стили для primary-кнопки */
+.primary {
+  background: $accent-color;
+
+  &:disabled {
+    background: $disabled-color;
+    color: $font-color-secondary;
+  }
+
+  &:hover:not(:disabled) {
+    background: $button-hover-color;
+    //нужен фикс цвета в глобальных стилях $button-hover-color: #DEEBC5;
+  }
+
+  &:active:not(:disabled) {
+    background: $button-color-pressed;
+    color: $font-color-disabled;
+  }
+}
+
+/* Стили для secondary-кнопки */
+.secondary {
+  background: $card-color;
+  border: 1px solid $accent-color;
+
+  &:disabled {
+    background: $card-color;
+    border: 1px solid $disabled-color;
+    color: $disabled-text;
+    // $disabled-text: #9CA197 отсутствует в глобальных стилях
+  }
+
+  &:hover:not(:disabled) {
+    background: $card-color;
+    border: 1px solid $button-hover-color;
+    //нужен фикс цвета в глобальных стилях $button-hover-color: #DEEBC5;
+    color: $font-color-secondary;
+  }
+
+  &:active:not(:disabled) {
+    background: $card-color;
+    border: 1px solid $button-color-pressed;
+    color: $font-color-primary;
+  }
+}
+
+/* Стили для tertiary-кнопки */
+.tertiary {
+  background: $card-color;
+}
+
+//стили отдельной иконки
+.iconOnly {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  color: $font-color-primary;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+  border: none;
+  padding: 0;
+
+  &:disabled {
+    cursor: not-allowed;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $button-color-pressed;
+    outline-offset: 2px;
+  }
+}
