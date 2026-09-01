@@ -1,5 +1,6 @@
 import './App.css'
 import { LineChart } from './charts/graph';
+import type { LineChartProps } from './charts/graph/types';
 import { Button } from './ui/button'
 
 const series: LineChartProps["series"] = [
