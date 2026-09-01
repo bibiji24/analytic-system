@@ -1,1 +1,51 @@
+.root {
+  display: inline-block;
+  position: relative;
+  box-sizing: border-box;
+  overflow: visible;
+  user-select: none;
+}
 
+.svg {
+  display: block;
+  overflow: visible;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--legend-item-gap, 16px);
+  padding: var(--legend-padding, 4px);
+  background: var(--legend-bg, transparent);
+  border-radius: var(--legend-radius, 6px);
+}
+
+.legendTop    { flex-direction: row; margin-bottom: 8px; }
+.legendBottom { flex-direction: row; margin-top: 8px; }
+.legendLeft   { flex-direction: column; margin-right: 8px; }
+.legendRight  { flex-direction: column; margin-left: 8px; }
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.legendItemHidden { opacity: 0.4; }
+
+.legendMarker {
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+.tooltip {
+  position: absolute;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 10;
+  transform: translate(-50%, -100%);
+  transition: opacity 0.12s ease;
+}
