@@ -2,15 +2,13 @@ import { type FC, useMemo, useState, useCallback } from 'react';
 import styles from './BarChart.module.scss';
 import type {
   BarChartProps,
-  BarChartDataSet,
+  BarChartSeries,
   BarChartConfig,
 } from './types';
 
-// ─── Значения по умолчанию ───────────────────────────────────
-
 const DEFAULT_CONFIG: Required<
   Omit<BarChartConfig, 'title'>
-> & { title?: BarChartConfig['title'] } = {
+> & { title?: BarChartConfig['title'] }  = {
   width: '100%',
   height: 320,
   backgroundColor: 'transparent',
@@ -37,7 +35,7 @@ const DEFAULT_CONFIG: Required<
     color: '#6366f1',
     hoverColor: '#818cf8',
     borderRadius: 6,
-    barWidthRatio: 0.7,
+    barWidthRatio: 0.5,
     gap: 12,
   },
   labels: {
@@ -62,17 +60,12 @@ const DEFAULT_CONFIG: Required<
   },
 };
 
-/** Глубокое слияние конфига с дефолтами */
-function mergeConfig(
-  custom?: BarChartConfig,
-): typeof DEFAULT_CONFIG {
+function mergeConfig(custom?: BarChartConfig) {
   if (!custom) return DEFAULT_CONFIG;
-
   return {
     width: custom.width ?? DEFAULT_CONFIG.width,
     height: custom.height ?? DEFAULT_CONFIG.height,
-    backgroundColor:
-      custom.backgroundColor ?? DEFAULT_CONFIG.backgroundColor,
+    backgroundColor: custom.backgroundColor ?? DEFAULT_CONFIG.backgroundColor,
     padding: { ...DEFAULT_CONFIG.padding, ...custom.padding },
     title: custom.title ?? DEFAULT_CONFIG.title,
     axis: { ...DEFAULT_CONFIG.axis, ...custom.axis },
@@ -91,24 +84,19 @@ function formatTick(value: number): string {
   return String(Math.round(value));
 }
 
-// ─── Компонент ───────────────────────────────────────────────
-
-const BarChart: FC<BarChartProps> = ({
-  data,
+export const BarChart: FC<BarChartProps> = ({
+  series,
   config: customConfig,
   onBarHover,
   onBarClick,
 }) => {
   const cfg = useMemo(() => mergeConfig(customConfig), [customConfig]);
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [hovered, setHovered] = useState<{ seriesIndex: number; index: number } | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  // Вычисляем геометрию
   const geometry = useMemo(() => {
-    const { padding, axis, bar, height, labels } = cfg;
-    const titleHeight = cfg.title?.text
-      ? (cfg.title.fontSize ?? 16) + 16
-      : 0;
+    const { padding, axis, bar, height } = cfg;
+    const titleHeight = cfg.title?.text ? (cfg.title.fontSize ?? 16) + 16 : 0;
 
     const chartTop = padding.top + titleHeight;
     const chartBottom = height - padding.bottom;
@@ -117,7 +105,11 @@ const BarChart: FC<BarChartProps> = ({
     const chartWidth = chartRight - chartLeft;
     const chartHeight = chartBottom - chartTop;
 
-    const maxValue = Math.max(...data.data.map((d) => d.value), 0);
+    // Максимум по всем сериям
+    const maxValue = Math.max(
+      ...series.flatMap((s) => s.data.map((d) => d.value)),
+      0,
+    );
     const niceMax = maxValue === 0 ? 10 : Math.ceil(maxValue * 1.1);
 
     const yTicks = Array.from(
@@ -125,16 +117,21 @@ const BarChart: FC<BarChartProps> = ({
       (_, i) => (niceMax / axis.yTickCount) * i,
     );
 
-    const slotWidth = data.data.length > 0
-      ? chartWidth / data.data.length
-      : 0;
-    const barWidth = Math.max(slotWidth * bar.barWidthRatio - bar.gap * 0.5, 2);
+    const categoriesCount = series.length > 0 ? series[0].data.length : 0;
+    const slotWidth = categoriesCount > 0 ? chartWidth / categoriesCount : 0;
+
+    // Ширина одного бара: слот минус отступы между сериями
+    const totalGap = bar.gap * (series.length - 1);
+    const barWidth = Math.max((slotWidth - totalGap) / series.length, 2);
 
     const yScale = (val: number) =>
       chartBottom - (val / niceMax) * chartHeight;
 
-    const xBarPosition = (index: number) =>
-      chartLeft + index * slotWidth + (slotWidth - barWidth) / 2;
+    const xBarPosition = (categoryIndex: number, seriesIndex: number) => {
+      const start = chartLeft + categoryIndex * slotWidth;
+      const offset = seriesIndex * barWidth + seriesIndex * bar.gap;
+      return start + offset;
+    };
 
     return {
       chartTop,
@@ -151,49 +148,51 @@ const BarChart: FC<BarChartProps> = ({
       xBarPosition,
       titleHeight,
     };
-  }, [cfg, data]);
-
-  // ── Обработчики ──
+  }, [cfg, series]);
 
   const handleBarEnter = useCallback(
-    (item: BarChartDataSet, index: number, e: React.MouseEvent<SVGElement>) => {
-      setHoveredIndex(index);
-      const rect = (e.currentTarget.ownerSVGElement as SVGSVGElement).getBoundingClientRect();
+    (seriesIndex: number, item: any, index: number, e: React.MouseEvent<SVGElement>) => {
+      setHovered({ seriesIndex, index });
+      const svg = e.currentTarget.ownerSVGElement as SVGSVGElement;
+      const rect = svg.getBoundingClientRect();
       setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-      onBarHover?.(item, index);
+      onBarHover?.(seriesIndex, item, index);
     },
     [onBarHover],
   );
 
-  const handleBarLeave = useCallback(() => {
-    setHoveredIndex(null);
+  const handleBarLeave = useCallback(() => setHovered(null), []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<SVGElement>) => {
+    const svg = e.currentTarget.ownerSVGElement as SVGSVGElement;
+    const rect = svg.getBoundingClientRect();
+    setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
   }, []);
 
   const handleBarClick = useCallback(
-    (item: BarChartDataSet, index: number) => {
-      onBarClick?.(item, index);
+    (seriesIndex: number, item: any, index: number) => {
+      onBarClick?.(seriesIndex, item, index);
     },
     [onBarClick],
   );
 
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent<SVGRectElement>) => {
-      const svg = e.currentTarget.ownerSVGElement as SVGSVGElement;
-      const rect = svg.getBoundingClientRect();
-      setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-    },
-    [],
-  );
-
-  if (data.data.length === 0) {
+  if (series.length === 0 || (series[0].data.length === 0)) {
     return (
-      <div className={styles.empty}>
-        Нет данных для отображения
-      </div>
+      <div className={styles.empty}>Нет данных для отображения</div>
     );
   }
 
   const { axis, bar, labels, tooltip } = cfg;
+
+  let tooltipContent: { label: string; value: string } | null = null;
+  if (tooltip.enabled && hovered !== null) {
+    const s = series[hovered.seriesIndex];
+    const item = s.data[hovered.index];
+    tooltipContent = {
+      label: `${s.name} — ${item.label}`,
+      value: formatTick(item.value),
+    };
+  }
 
   return (
     <div
@@ -204,23 +203,13 @@ const BarChart: FC<BarChartProps> = ({
         className={styles.svg}
         width={cfg.width}
         height={cfg.height}
-        viewBox={`0 0 ${
-          typeof cfg.width === 'number' ? cfg.width : 800
-        } ${cfg.height}`}
+        viewBox={`0 0 ${typeof cfg.width === 'number' ? cfg.width : 800} ${cfg.height}`}
         preserveAspectRatio="xMidYMid meet"
       >
-        {/* Фон */}
         {cfg.backgroundColor !== 'transparent' && (
-          <rect
-            x={0}
-            y={0}
-            width="100%"
-            height={cfg.height}
-            fill={cfg.backgroundColor}
-          />
+          <rect x={0} y={0} width="100%" height={cfg.height} fill={cfg.backgroundColor} />
         )}
 
-        {/* Заголовок */}
         {cfg.title?.text && (
           <text
             x={cfg.padding.left}
@@ -234,7 +223,6 @@ const BarChart: FC<BarChartProps> = ({
           </text>
         )}
 
-        {/* Сетка (горизонтальные линии) */}
         {axis.showGrid &&
           geometry.yTicks.map((tick, i) => {
             const y = geometry.yScale(tick);
@@ -252,7 +240,6 @@ const BarChart: FC<BarChartProps> = ({
             );
           })}
 
-        {/* Ось Y */}
         {axis.showYAxis && (
           <line
             x1={geometry.chartLeft}
@@ -264,7 +251,6 @@ const BarChart: FC<BarChartProps> = ({
           />
         )}
 
-        {/* Метки и деления оси Y */}
         {axis.showYTicks &&
           geometry.yTicks.map((tick, i) => {
             const y = geometry.yScale(tick);
@@ -292,7 +278,6 @@ const BarChart: FC<BarChartProps> = ({
             );
           })}
 
-        {/* Ось X */}
         {axis.showXAxis && (
           <line
             x1={geometry.chartLeft}
@@ -304,90 +289,91 @@ const BarChart: FC<BarChartProps> = ({
           />
         )}
 
-        {/* Бары */}
-        {data.data.map((item, i) => {
-          const barHeight = Math.max(
-            geometry.chartBottom - geometry.yScale(item.value),
-            0,
-          );
-          const x = geometry.xBarPosition(i);
-          const y = geometry.yScale(item.value);
-          const fillColor = item.color ?? bar.color;
-          const isHovered = hoveredIndex === i;
-
+        {/* Рисуем бары по сериям */}
+        {series.map((serie, sIndex) => {
+          const serieColor = serie.color ?? bar.color;
           return (
-            <g
-              key={`bar-${i}`}
-              className={styles.barGroup}
-              onMouseEnter={(e) => handleBarEnter(item, i, e)}
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleBarLeave}
-              onClick={() => handleBarClick(item, i)}
-              style={{ cursor: onBarClick ? 'pointer' : 'default' }}
-            >
-              <rect
-                x={x}
-                y={y}
-                width={geometry.barWidth}
-                height={barHeight}
-                rx={bar.borderRadius}
-                ry={bar.borderRadius}
-                fill={isHovered ? bar.hoverColor : fillColor}
-                className={styles.barRect}
-              />
+            <g key={`serie-${sIndex}`}>
+              {serie.data.map((item, cIndex) => {
+                const barHeight = Math.max(geometry.chartBottom - geometry.yScale(item.value), 0);
+                const x = geometry.xBarPosition(cIndex, sIndex);
+                const y = geometry.yScale(item.value);
+                const fillColor = item.color ?? serieColor;
+                const isHovered = hovered?.seriesIndex === sIndex && hovered.index === cIndex;
 
-              {/* Подпись значения над баром */}
-              {labels.showValues && (
-                <text
-                  x={x + geometry.barWidth / 2}
-                  y={y - axis.tickPadding / 2}
-                  textAnchor="middle"
-                  fill={labels.valueColor}
-                  fontSize={labels.valueFontSize}
-                  fontFamily={labels.valueFontFamily}
-                  className={styles.valueLabel}
-                >
-                  {formatTick(item.value)}
-                </text>
-              )}
+                return (
+                  <g
+                    key={`bar-${sIndex}-${cIndex}`}
+                    className={styles.barGroup}
+                    onMouseEnter={(e) => handleBarEnter(sIndex, item, cIndex, e)}
+                    onMouseMove={handleMouseMove}
+                    onMouseLeave={handleBarLeave}
+                    onClick={() => handleBarClick(sIndex, item, cIndex)}
+                    style={{ cursor: onBarClick ? 'pointer' : 'default' }}
+                  >
+                    <rect
+                      x={x}
+                      y={y}
+                      width={geometry.barWidth}
+                      height={barHeight}
+                      rx={bar.borderRadius}
+                      ry={bar.borderRadius}
+                      fill={isHovered ? bar.hoverColor ?? fillColor : fillColor}
+                      className={styles.barRect}
+                    />
 
-              {/* Подпись по оси X */}
-              {labels.showXLabels && (
-                <text
-                  x={x + geometry.barWidth / 2}
-                  y={geometry.chartBottom + axis.tickLength + axis.tickPadding + labels.xLabelFontSize}
-                  textAnchor="middle"
-                  fill={labels.xLabelColor}
-                  fontSize={labels.xLabelFontSize}
-                  fontFamily={labels.xLabelFontFamily}
-                  transform={
-                    labels.xLabelRotation !== 0
-                      ? `rotate(${labels.xLabelRotation} ${x + geometry.barWidth / 2} ${geometry.chartBottom + axis.tickLength + axis.tickPadding + labels.xLabelFontSize})`
-                      : undefined
-                  }
-                >
-                  {item.label}
-                </text>
-              )}
+                    {labels.showValues && (
+                      <text
+                        x={x + geometry.barWidth / 2}
+                        y={y - axis.tickPadding / 2}
+                        textAnchor="middle"
+                        fill={labels.valueColor}
+                        fontSize={labels.valueFontSize}
+                        fontFamily={labels.valueFontFamily}
+                        className={styles.valueLabel}
+                      >
+                        {formatTick(item.value)}
+                      </text>
+                    )}
 
-              {/* Деление на оси X под баром */}
-              {axis.showXTicks && (
-                <line
-                  x1={x + geometry.barWidth / 2}
-                  y1={geometry.chartBottom}
-                  x2={x + geometry.barWidth / 2}
-                  y2={geometry.chartBottom + axis.tickLength}
-                  stroke={axis.axisColor}
-                  strokeWidth={axis.axisWidth}
-                />
-              )}
+                    {/* Подпись категории рисуем только для первой серии */}
+                    {sIndex === 0 && labels.showXLabels && (
+                      <text
+                        x={x + geometry.barWidth / 2}
+                        y={geometry.chartBottom + axis.tickLength + axis.tickPadding + labels.xLabelFontSize}
+                        textAnchor="middle"
+                        fill={labels.xLabelColor}
+                        fontSize={labels.xLabelFontSize}
+                        fontFamily={labels.xLabelFontFamily}
+                        transform={
+                          labels.xLabelRotation !== 0
+                            ? `rotate(${labels.xLabelRotation} ${x + geometry.barWidth / 2} ${geometry.chartBottom + axis.tickLength + axis.tickPadding + labels.xLabelFontSize})`
+                            : undefined
+                        }
+                      >
+                        {item.label}
+                      </text>
+                    )}
+
+                    {axis.showXTicks && sIndex === 0 && (
+                      <line
+                        x1={x + geometry.barWidth / 2}
+                        y1={geometry.chartBottom}
+                        x2={x + geometry.barWidth / 2}
+                        y2={geometry.chartBottom + axis.tickLength}
+                        stroke={axis.axisColor}
+                        strokeWidth={axis.axisWidth}
+                      />
+                    )}
+                  </g>
+                );
+              })}
             </g>
           );
         })}
       </svg>
 
-      {/* Тултип */}
-      {tooltip.enabled && hoveredIndex !== null && (
+      {tooltip.enabled && tooltipContent && (
         <div
           className={styles.tooltip}
           style={{
@@ -401,12 +387,8 @@ const BarChart: FC<BarChartProps> = ({
             padding: tooltip.padding,
           }}
         >
-          <span className={styles.tooltipLabel}>
-            {data.data[hoveredIndex].label}
-          </span>
-          <span className={styles.tooltipValue}>
-            {data.data[hoveredIndex].value}
-          </span>
+          <span className={styles.tooltipLabel}>{tooltipContent.label}</span>
+          <span className={styles.tooltipValue}>{tooltipContent.value}</span>
         </div>
       )}
     </div>

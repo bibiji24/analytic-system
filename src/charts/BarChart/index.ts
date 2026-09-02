@@ -1,4 +1,4 @@
-export { default } from './BarChart';
+export { BarChart } from './BarChart';
 export type {
   BarChartProps,
   BarChartConfig,

@@ -7,9 +7,10 @@ export interface BarChartDataSet {
   color?: string;
 }
 
-export interface BarSeries {
+export interface BarChartSeries {
+  name: string;           // название серии, например «Продажи», «План»
   data: BarChartDataSet[];
-  hidden: boolean;
+  color?: string;         // общий цвет всей серии (перекрывается color в data)
 }
 
 export interface AxisConfig {
@@ -144,13 +145,13 @@ export interface BarChartConfig {
 
 export interface BarChartProps {
   /** Данные для отрисовки */
-  data: BarSeries;
+  series: BarChartSeries[];
   /** Конфигурация визуала */
   config?: BarChartConfig;
   /** Callback при наведении на бар */
-  onBarHover?: (item: BarChartDataSet, index: number) => void;
+  onBarHover?: (seriesIndex: number, item: BarChartDataSet, index: number) => void;
   /** Callback при клике на бар */
-  onBarClick?: (item: BarChartDataSet, index: number) => void;
+  onBarClick?: (seriesIndex: number, item: BarChartDataSet, index: number) => void;
 
   titleColor?: string;
   titleFontSize?: number;

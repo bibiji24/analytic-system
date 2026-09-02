@@ -1,4 +1,4 @@
-import type { BarSeries, AxisConfig, LegendConfig, TooltipConfig, BarChartProps } from "./types";
+import type { BarChartSeries, AxisConfig, LegendConfig, TooltipConfig, BarChartProps } from "./types";
 
 export const DEFAULT_COLORS = [
   "#4f8cff",
@@ -102,13 +102,12 @@ export const DEFAULT_PROPS: Required<
 };
 
 export function getDomain(
-  series: BarSeries[],
+  series: BarChartSeries[],
   yMin?: number,
   yMax?: number,
 ): [number, number] {
   // Для stacked: суммируем по категориям
   const allValues = series
-    .filter((s) => !s.hidden)
     .map((s) => s.data)
     .reduce((acc, data) => {
       data.forEach((v, i) => {

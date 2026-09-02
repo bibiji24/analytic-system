@@ -1,6 +1,6 @@
 import './App.css'
 import type { BarChartConfig } from './charts/BarChart';
-import BarChart from './charts/BarChart';
+import { BarChart } from './charts/BarChart';
 import { LineChart } from './charts/graph';
 import type { LineChartProps } from './charts/graph/types';
 import { Button } from './ui/button'
@@ -34,17 +34,32 @@ const series: LineChartProps["series"] = [
 
 const labels = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт"];
 
-const data = {
-  data: [
-    { label: 'Янв', value: 4200 },
-    { label: 'Фев', value: 3100 },
-    { label: 'Мар', value: 5800, color: '#22c55e' },
-    { label: 'Апр', value: 4700 },
-    { label: 'Май', value: 6200 },
-    { label: 'Июн', value: 3900 },
-  ],
-  hidden: false
-};
+const data = [
+  {
+    name: "План",
+    data: [
+      { label: 'Янв', value: 4200 },
+      { label: 'Фев', value: 3100 },
+      { label: 'Мар', value: 5800 },
+      { label: 'Апр', value: 4700 },
+      { label: 'Май', value: 6200 },
+      { label: 'Июн', value: 3900 },
+    ],
+    color: '#cc3333'
+  },
+  {
+    name: "Факт",
+    data: [
+      { label: 'Янв', value: 3000 },
+      { label: 'Фев', value: 2500 },
+      { label: 'Мар', value: 5234 },
+      { label: 'Апр', value: 4800 },
+      { label: 'Май', value: 6100 },
+      { label: 'Июн', value: 4500 },
+    ],
+    color: '#2340c2ff'
+  }
+]
 
 const config: BarChartConfig = {
   width: 600,
@@ -134,7 +149,7 @@ function App() {
     </div>
     <div style={{ padding: 24 }}>
       <BarChart
-        data={data}
+        series={data}
         config={config}
         onBarClick={(item, i) => console.log('Clicked:', item, i)}
       />
