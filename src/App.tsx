@@ -1,4 +1,6 @@
 import './App.css'
+import type { BarChartConfig } from './charts/BarChart';
+import BarChart from './charts/BarChart';
 import { LineChart } from './charts/graph';
 import type { LineChartProps } from './charts/graph/types';
 import { Button } from './ui/button'
@@ -19,7 +21,7 @@ const series: LineChartProps["series"] = [
     data: [8, 10, 12, 14, 16, 18, 20, 22, 24, 26],
     color: "#ff6b6b",
     strokeWidth: 2,
-    dash: "6 4",
+    dash: "14 10",
   },
   {
     id: "profit",
@@ -31,6 +33,49 @@ const series: LineChartProps["series"] = [
 ];
 
 const labels = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт"];
+
+const data = {
+  data: [
+    { label: 'Янв', value: 4200 },
+    { label: 'Фев', value: 3100 },
+    { label: 'Мар', value: 5800, color: '#22c55e' },
+    { label: 'Апр', value: 4700 },
+    { label: 'Май', value: 6200 },
+    { label: 'Июн', value: 3900 },
+  ],
+  hidden: false
+};
+
+const config: BarChartConfig = {
+  width: 600,
+  height: 360,
+  backgroundColor: '#fafafa',
+  title: {
+    text: 'Продажи за полугодие',
+    color: '#0f172a',
+    fontSize: 18,
+    fontWeight: 700,
+  },
+  axis: {
+    gridLineColor: '#e2e8f0',
+    yTickCount: 4,
+    tickColor: '#64748b',
+  },
+  bar: {
+    color: '#6366f1',
+    hoverColor: '#4f46e5',
+    borderRadius: 8,
+    barWidthRatio: 0.65,
+  },
+  labels: {
+    showValues: true,
+    xLabelRotation: 0,
+  },
+  tooltip: {
+    backgroundColor: '#0f172a',
+    textColor: '#f8fafc',
+  },
+};
 
 function App() {
 
@@ -85,6 +130,13 @@ function App() {
           fontSize: 13,
           padding: 10,
         }}
+      />
+    </div>
+    <div style={{ padding: 24 }}>
+      <BarChart
+        data={data}
+        config={config}
+        onBarClick={(item, i) => console.log('Clicked:', item, i)}
       />
     </div>
     </>
