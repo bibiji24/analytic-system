@@ -66,6 +66,8 @@ export interface BarChartBarConfig {
   barWidthRatio?: number;
   /** Отступ между барами, px */
   gap?: number;
+  /** Отступ между категориями */
+  categoryGap?: number;
 }
 
 export interface BarChartLabelConfig {
@@ -141,6 +143,7 @@ export interface BarChartConfig {
   labels?: BarChartLabelConfig;
   /** Конфигурация тултипа */
   tooltip?: TooltipConfig;
+  legend?: BarChartLegendConfig;
 }
 
 export interface BarChartProps {
@@ -164,15 +167,16 @@ export interface BarChartProps {
   horizontal?: boolean;
 }
 
-export interface LegendConfig {
-  visible: boolean;
-  position: string;
-  fontSize: number;
-  fontFamily: string;
-  color: string;
-  itemGap: number;
-  markerSize: number;
-  backgroundColor: string;
-  padding: number;
-  borderRadius: number;
+export interface BarChartLegendConfig {
+  enabled?: boolean;
+  position?: 'top' | 'bottom' | 'right' | 'left'; // пока используем bottom
+  fontSize?: number;
+  fontFamily?: string;
+  color?: string;
+  gap?: number;        // отступ между элементами легенды
+  itemGap?: number;    // отступ внутри элемента (между цветом и текстом)
+  markerSize?: number;
+  backgroundColor?: string;
+  padding?: number;
+  borderRadius?: number;
 }

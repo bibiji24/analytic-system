@@ -2,7 +2,6 @@ import { type FC, useMemo, useState, useCallback } from 'react';
 import styles from './BarChart.module.scss';
 import type {
   BarChartProps,
-  BarChartSeries,
   BarChartConfig,
 } from './types';
 
@@ -37,6 +36,7 @@ const DEFAULT_CONFIG: Required<
     borderRadius: 6,
     barWidthRatio: 0.5,
     gap: 12,
+    categoryGap: 24,
   },
   labels: {
     showValues: true,
@@ -58,6 +58,16 @@ const DEFAULT_CONFIG: Required<
     borderRadius: 8,
     padding: 8,
   },
+  legend: {
+    enabled: true,
+    position: 'bottom',
+    fontSize: 12,
+    fontFamily: 'sans-serif',
+    color: '#334155',
+    gap: 16,
+    itemGap: 8,
+    markerSize: 16,
+  },
 };
 
 function mergeConfig(custom?: BarChartConfig) {
@@ -72,6 +82,7 @@ function mergeConfig(custom?: BarChartConfig) {
     bar: { ...DEFAULT_CONFIG.bar, ...custom.bar },
     labels: { ...DEFAULT_CONFIG.labels, ...custom.labels },
     tooltip: { ...DEFAULT_CONFIG.tooltip, ...custom.tooltip },
+    legend: { ...DEFAULT_CONFIG.legend, ...custom.legend },
   };
 }
 
@@ -128,7 +139,7 @@ export const BarChart: FC<BarChartProps> = ({
       chartBottom - (val / niceMax) * chartHeight;
 
     const xBarPosition = (categoryIndex: number, seriesIndex: number) => {
-      const start = chartLeft + categoryIndex * slotWidth;
+      const start = chartLeft + categoryIndex * slotWidth + categoryIndex * bar.categoryGap;
       const offset = seriesIndex * barWidth + seriesIndex * bar.gap;
       return start + offset;
     };
@@ -182,7 +193,7 @@ export const BarChart: FC<BarChartProps> = ({
     );
   }
 
-  const { axis, bar, labels, tooltip } = cfg;
+  const { axis, bar, labels, tooltip, legend } = cfg;
 
   let tooltipContent: { label: string; value: string } | null = null;
   if (tooltip.enabled && hovered !== null) {
@@ -193,6 +204,36 @@ export const BarChart: FC<BarChartProps> = ({
       value: formatTick(item.value),
     };
   }
+
+  const containerStyle: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: legend.position === 'right' || legend.position === 'left' ? 'column' : 'row',
+    alignItems: legend.position === 'right' || legend.position === 'bottom' ? 'flex-end' : legend.position === 'left' || legend.position === 'top' ? 'flex-start' : 'center',
+    justifyContent: legend.position === 'bottom' || legend.position === 'top' ? 'center' : undefined,
+    gap: legend.gap,
+    backgroundColor: legend.backgroundColor,
+    padding: legend.padding,
+    borderRadius: legend.borderRadius,
+  };
+
+  const itemStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: legend.itemGap,
+  };
+
+  const markerStyle: React.CSSProperties = {
+    width: legend.markerSize,
+    height: legend.markerSize,
+    flexShrink: 0,
+  };
+
+  const textStyle: React.CSSProperties = {
+    fontSize: legend.fontSize,
+    fontFamily: legend.fontFamily,
+    lineHeight: 1,
+    color: legend.color,
+  };
 
   return (
     <div
@@ -339,7 +380,7 @@ export const BarChart: FC<BarChartProps> = ({
                     {/* Подпись категории рисуем только для первой серии */}
                     {sIndex === 0 && labels.showXLabels && (
                       <text
-                        x={x + geometry.barWidth / 2}
+                        x={x + geometry.slotWidth / 2}
                         y={geometry.chartBottom + axis.tickLength + axis.tickPadding + labels.xLabelFontSize}
                         textAnchor="middle"
                         fill={labels.xLabelColor}
@@ -357,9 +398,9 @@ export const BarChart: FC<BarChartProps> = ({
 
                     {axis.showXTicks && sIndex === 0 && (
                       <line
-                        x1={x + geometry.barWidth / 2}
+                        x1={x + geometry.slotWidth / 2}
                         y1={geometry.chartBottom}
-                        x2={x + geometry.barWidth / 2}
+                        x2={x + geometry.slotWidth / 2}
                         y2={geometry.chartBottom + axis.tickLength}
                         stroke={axis.axisColor}
                         strokeWidth={axis.axisWidth}
@@ -372,6 +413,20 @@ export const BarChart: FC<BarChartProps> = ({
           );
         })}
       </svg>
+
+      {legend?.enabled && legend.position === 'bottom' && (
+        <div style={containerStyle}>
+          {series.map((serie, idx) => {
+            const color = serie.color ?? (bar.color && idx < 10 ? bar.color : '#ccc');
+            return (
+              <div key={`legend-item-${idx}`} style={itemStyle}>
+                <span style={{ ...markerStyle, backgroundColor: color }}></span>
+                <span style={textStyle}>{serie.name}</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {tooltip.enabled && tooltipContent && (
         <div

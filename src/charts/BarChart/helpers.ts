@@ -1,4 +1,4 @@
-import type { BarChartSeries, AxisConfig, LegendConfig, TooltipConfig, BarChartProps } from "./types";
+import type { BarChartSeries, AxisConfig, BarChartLegendConfig, TooltipConfig, BarChartProps } from "./types";
 
 export const DEFAULT_COLORS = [
   "#4f8cff",
@@ -45,18 +45,19 @@ export const DEFAULT_AXIS: Required<
 
 export const DEFAULT_LEGEND: Required<
   Pick<
-    LegendConfig,
-    | "visible" | "position" | "fontSize" | "fontFamily"
-    | "color" | "itemGap" | "markerSize"
+    BarChartLegendConfig,
+    | "enabled" | "position" | "fontSize" | "fontFamily"
+    | "color" | "itemGap" | "gap" | "markerSize"
     | "backgroundColor" | "padding" | "borderRadius"
   >
 > = {
-  visible: true,
-  position: "top",
+  enabled: true,
+  position: "bottom",
   fontSize: 12,
   fontFamily: "inherit",
   color: "#334155",
   itemGap: 16,
+  gap: 32,
   markerSize: 12,
   backgroundColor: "transparent",
   padding: 4,
@@ -132,7 +133,7 @@ export function getDomain(
 export function mergeAxis(axis: AxisConfig | undefined) {
   return { ...DEFAULT_AXIS, ...axis };
 }
-export function mergeLegend(legend: LegendConfig | undefined) {
+export function mergeLegend(legend: BarChartLegendConfig | undefined) {
   return { ...DEFAULT_LEGEND, ...legend };
 }
 export function mergeTooltip(tooltip: TooltipConfig | undefined) {

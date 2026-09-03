@@ -58,6 +58,18 @@ const data = [
       { label: 'Июн', value: 4500 },
     ],
     color: '#2340c2ff'
+  },
+  {
+    name: "Прогноз",
+    data: [
+      { label: 'Янв', value: 4500 },
+      { label: 'Фев', value: 3500 },
+      { label: 'Мар', value: 6000 },
+      { label: 'Апр', value: 5000 },
+      { label: 'Май', value: 6500 },
+      { label: 'Июн', value: 4500 },
+    ],
+    color: '#00ff2fff'
   }
 ]
 

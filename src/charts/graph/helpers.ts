@@ -62,7 +62,7 @@ export const DEFAULT_LEGEND: Required<
   >
 > = {
   visible: true,
-  position: "top",
+  position: "bottom",
   fontSize: 12,
   fontFamily: "inherit",
   color: "#334155",
